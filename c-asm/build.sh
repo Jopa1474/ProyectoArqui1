@@ -50,7 +50,7 @@ riscv64-unknown-elf-gcc \
     -o chacha20.o
 
 if [ $? -ne 0 ]; then
-    echo "Math assembly compilation failed"
+    echo "Assembly compilation failed"
     exit 1
 fi
 
@@ -69,8 +69,8 @@ riscv64-unknown-elf-gcc \
     -o main.elf
 
 if [ $? -eq 0 ]; then
-    echo "Build successful: example.elf created"
-    echo "Object files: example.o, math_asm.o"
+    echo "Build successful: main.elf created"
+    echo "Object files: main.o, chacha20.o"
 else
     echo "Linking failed"
     exit 1

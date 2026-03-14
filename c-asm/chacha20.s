@@ -1,15 +1,22 @@
 
-.section.text
+.section .text
 
 .globl quarter_round
-.globl chacha20_block
-.globl chacha20_encrypt
+
 
 quarter_round:
-    ret
 
-chacha20_block:
-    ret
+    # recibe state, a, b, c, d
 
-chacha20_encrypt:
+    # a0 = state
+    # a1 = indice a
+
+    slli t0, a1, 2      # t0 = a * 4
+    add  t0, a0, t0     # t0 = state + offset
+    lw   t1, 0(t0)      # t1 = state[a]
+
+    addi t1, t1, 4
+
+    sw t1, 0(t0)        # devolver valor (solo para prueba)
+
     ret

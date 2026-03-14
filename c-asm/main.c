@@ -1,4 +1,4 @@
-#include <stdio.h>
+
 #include <stdint.h>
 
 
@@ -48,34 +48,35 @@ void print_string(const char* str) {
 int main() {
 
     // state de prueba
-    uint32_t state[16] = {
+    uint32_t state[16];
 
-        // constantes
-        0x61707865,
-        0x3320646e,
-        0x79622d32,
-        0x6b206574,
+    state[0] = 0x00000000;//0x61707865;
+    state[1] = 0x3320646e;
+    state[2] = 0x79622d32;
+    state[3] = 0x6b206574;
 
-        // key
-        0x03020100,
-        0x07060504,
-        0x0b0a0908,
-        0x0f0e0d0c,
-        0x13121110,
-        0x17161514,
-        0x1b1a1918,
-        0x1f1e1d1c,
+    state[4] = 0x03020100;
+    state[5] = 0x07060504;
+    state[6] = 0x0b0a0908;
+    state[7] = 0x0f0e0d0c;
 
-        // counter
-        1,
+    state[8] = 0x13121110;
+    state[9] = 0x17161514;
+    state[10] = 0x1b1a1918;
+    state[11] = 0x1f1e1d1c;
 
-        // nonce
-        0x00000000,
-        0x4a000000,
-        0x00000000
-    };
+    state[12] = 1;
 
-    quarter_round(state, 1, 2, 3, 4); 
+    state[13] = 0x00000000;
+    state[14] = 0x4a000000;
+    state[15] = 0x00000000;
+
+    quarter_round(state, 1, 2, 3, 4);
+
+    for(int i=0;i<16;i++){
+        print_number(state[i]);
+        print_char('\n');
+    }
     print_string("Quarter round completado.");
     return 0;
 }
