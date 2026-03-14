@@ -12,8 +12,8 @@ riscv64-unknown-elf-gcc \
     -g3 \
     -gdwarf-4 \
     -c \
-    hola.c \
-    -o hola.o
+    main.c \
+    -o main.o
 
 if [ $? -ne 0 ]; then
     echo "C compilation failed"
@@ -46,8 +46,8 @@ riscv64-unknown-elf-gcc \
     -g3 \
     -gdwarf-4 \
     -c \
-    math_asm.s \
-    -o math_asm.o
+    chacha20.s \
+    -o chacha20.o
 
 if [ $? -ne 0 ]; then
     echo "Math assembly compilation failed"
@@ -63,10 +63,10 @@ riscv64-unknown-elf-gcc \
     -g3 \
     -gdwarf-4 \
     startup.o \
-    hola.o \
-    math_asm.o \
+    main.o \
+    chacha20.o \
     -T linker.ld \
-    -o hola.elf
+    -o main.elf
 
 if [ $? -eq 0 ]; then
     echo "Build successful: example.elf created"
