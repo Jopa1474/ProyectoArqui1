@@ -43,38 +43,73 @@ void print_string(const char* str) {
     }
 }
 
+void print_hex(uint32_t num) {
+    
+    char hex_chars[] = "0123456789ABCDEF";
+    char buffer[8];
+    int i = 0;
+
+    if (num == 0) {
+        print_char('0');
+        return;
+    }
+
+    while (num > 0) {
+        buffer[i++] = hex_chars[num % 16];
+        num /= 16;
+    }
+
+    // imprimir en orden inverso
+    while (i > 0) {
+        print_char(buffer[--i]);
+    }
+}
+
 
 
 int main() {
+    // Valores de prueba para a, b, c, d
+    //a = 0x11111111
+    // b = 0x01020304
+    // c = 0x9b8d6f43
+    // d = 0x01234567
+
+    // Resultados esperados después de la ejecución de quarter_round:
+    // a = 0xea2a92f4
+    // b = 0xcb1cf8ce
+    // c = 0x4581472e
+    // d = 0x5881c4bb
 
     // state de prueba
     uint32_t state[16];
 
-    state[0] = 0x00000000;//0x61707865;
+    state[0] = 0x11111111;//0x61707865;
     state[1] = 0x3320646e;
     state[2] = 0x79622d32;
     state[3] = 0x6b206574;
 
-    state[4] = 0x03020100;
+    state[4] = 0x01020304;//0x03020100;
     state[5] = 0x07060504;
     state[6] = 0x0b0a0908;
     state[7] = 0x0f0e0d0c;
 
-    state[8] = 0x13121110;
+    state[8] = 0x9b8d6f43;//0x13121110;
     state[9] = 0x17161514;
     state[10] = 0x1b1a1918;
     state[11] = 0x1f1e1d1c;
 
-    state[12] = 1;
+    state[12] = 0x01234567;//1;
 
     state[13] = 0x00000000;
     state[14] = 0x4a000000;
     state[15] = 0x00000000;
 
-    quarter_round(state, 1, 2, 3, 4);
+    quarter_round(state, 0, 4, 8, 12);
 
     for(int i=0;i<16;i++){
-        print_number(state[i]);
+        print_number(i);
+        print_char(':');
+        print_hex(state[i]);
         print_char('\n');
     }
     print_string("Quarter round completado.");
