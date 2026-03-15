@@ -129,10 +129,11 @@ chacha20_block:
     # Por convención, guardamos los registros que vamos a usar para 
     # almacenar la dirección del inicio de ambos arrays
 
-    addi sp, sp, -16 # Guardamos 16 bytes para ambos registros (4 + 4 bytes)
+    addi sp, sp, -16 # Guardamos 16 bytes para ambos registros 
 
     sw s0, 0(sp) # Registro para state
     sw s1, 4(sp) # Registro para working_state
+    sw s2, 8(sp) # Registro para no perder el rastro de a0 (output)
 
     # Reservamos el espacio para los arrays (64 + 64 bytes)
 
@@ -203,10 +204,9 @@ chacha20_block:
     # Una vez construido el state, lo copiamos en working state
 
     li t0, 0 # Iniciamos el contador para el loop 
+    li t1, 16 # Referencia para detener el loop
 
 loop_working_state:
-
-    li t1, 16 # Referencia para detener el loop
 
     # Si ya se alcanzaron las 16 palabras, salimos del loop
     bge t0, t1, loop_working_state_done
@@ -219,7 +219,7 @@ loop_working_state:
     lw t4, 0(t3)
 
     # Obtenemos la direccion de working state
-    add t5, s1, s2
+    add t5, s1, t2
 
     # Guardamos state[i] en working state[i]
     sw t4, 0(t5)
@@ -231,5 +231,171 @@ loop_working_state:
     j loop_working_state
 
 loop_working_state_done:
-    ret
+    
+    li t0, 0 # Contador para el inner inner block, para las 10 rondas
+    li t1, 10
 
+    # Para no perder la referencia a output, lo guardamos en s2
+    mv s2, a0 
+
+inner_block:
+
+    # Si el contador llega a 10, saltamos
+    bge t0, t1, inner_block_done
+
+    # Operaciones de columna
+    # quarter_round(state, 0, 4, 8, 12)
+    mv a0, s1
+    li a1, 0
+    li a2, 4
+    li a3, 8
+    li a4, 12
+    # Llamamos a quarter_round con los valores previamente definidos
+    call quarter_round
+
+    # quarter_round(state, 1, 5, 9, 13)
+    mv a0, s1
+    li a1, 1
+    li a2, 5
+    li a3, 9
+    li a4, 13
+    
+    call quarter_round
+    
+    # quarter_round(state, 2, 6, 10, 14)
+    mv a0, s1
+    li a1, 2
+    li a2, 6
+    li a3, 10
+    li a4, 14
+    
+    call quarter_round
+
+    # quarter_round(state, 3, 7, 11, 15)
+    mv a0, s1
+    li a1, 3
+    li a2, 7
+    li a3, 11
+    li a4, 15
+    
+    call quarter_round
+
+    # Operaciones de diagonal
+    # quarter_round(state, 0, 5, 10, 15)
+    mv a0, s1
+    li a1, 0
+    li a2, 5
+    li a3, 10
+    li a4, 15
+    
+    call quarter_round
+
+    # quarter_round(state, 1, 6, 11, 12)
+    mv a0, s1
+    li a1, 1
+    li a2, 6
+    li a3, 11
+    li a4, 12
+    
+    call quarter_round
+
+    # quarter_round(state, 2, 7, 8, 13)
+    mv a0, s1
+    li a1, 2
+    li a2, 7
+    li a3, 8
+    li a4, 13
+    
+    call quarter_round
+
+    # quarter_round(state, 3, 4, 9, 14)
+    mv a0, s1
+    li a1, 3
+    li a2, 4
+    li a3, 9
+    li a4, 14
+    
+    call quarter_round
+
+    addi t0, t0, 1
+    j inner_block
+
+inner_block_done:
+
+    # Ahora definimos el working_state final con:
+    # working_state[i] = working_state[i] + state[i]
+
+    li t0, 0
+    li t1, 16
+
+loop_working_state_final:
+
+    bge t0, t1, loop_working_state_final_done
+
+    # Cargamos los valores de state[i] y working_state[i] y los sumamos
+    # Offset para ir saltando de 4 en 4 (i * 4)
+    slli t2, t0, 2 
+
+    # Obtenemos state[i]
+    add t3, s0, t2
+    lw t4, 0(t3)
+
+    # Obtenemos working_state[i]
+    add t5, s1, t2
+    lw t6, 0(t5)
+
+    # Sumamos ambos valores
+
+    add t6, t6, t4 # working_state[i] = working_state[i] + state[i]
+
+    # Guardamos el resultado en working_state[i]
+    sw t6, 0(t5)
+ 
+    # Aumentamos el contador y hacemos el loop
+    addi t0, t0, 1
+    j loop_working_state_final
+
+loop_working_state_final_done:
+
+    # Para finalizar con el chacha20_block, agregamos working_state
+    # a output
+    li t0, 0
+    li t1, 16 # Referencia para detener el loop
+
+loop_output:
+
+    # Si ya se alcanzaron las 16 palabras, salimos del loop
+    bge t0, t1, loop_output_done
+    
+    # Offset para ir saltando de 4 en 4 (i * 4)
+    slli t2, t0, 2 
+
+    # Obtenemos working_state[i]
+    add t3, s1, t2
+    lw t4, 0(t3)
+
+    # Obtenemos la direccion de output
+    add t5, s2, t2
+
+    # Guardamos working_state[i] en working output[i]
+    sw t4, 0(t5)
+
+    # Actualizamos el contador
+    addi t0, t0, 1
+
+    # Repetimos el loop
+    j loop_output
+
+loop_output_done:
+    # Para terminar, restauramos el stack y asigmanos a0 = s2
+
+    mv a0, s2
+
+    addi sp, sp, 128
+
+    lw s0, 0(sp)
+    lw s1, 4(sp)
+    lw s2, 8(sp)
+
+    addi sp, sp, 16
+    ret
