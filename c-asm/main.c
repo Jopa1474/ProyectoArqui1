@@ -80,6 +80,10 @@ int main() {
     // c = 0x4581472e
     // d = 0x5881c4bb
 
+    /*
+    
+    print_string("Iniciando prueba de quarter round...\n");
+
     // state de prueba
     uint32_t state[16];
 
@@ -106,6 +110,7 @@ int main() {
 
     quarter_round(state, 0, 4, 8, 12);
 
+    print_string("Resultados de quarter round:\n");
     for(int i=0;i<16;i++){
         print_number(i);
         print_char(':');
@@ -113,5 +118,56 @@ int main() {
         print_char('\n');
     }
     print_string("Quarter round completado.");
+
+    print_char('\n');
+    
+    */
+
+    print_string("Iniciando prueba de chacha20 block. \n");
+
+    // Valores de prueba proporcionados por la pagina oficial de chacha20: https://www.ietf.org/rfc/rfc8439.html#section-2.3.2
+    // Definimos el output (16 palabras = 64 bytes)
+    uint32_t output[16];
+
+    // Definimos el key (32 bytes)
+    uint8_t key_bytes[32] = {
+        0x00,0x01,0x02,0x03,
+        0x04,0x05,0x06,0x07,
+        0x08,0x09,0x0a,0x0b,
+        0x0c,0x0d,0x0e,0x0f,
+        0x10,0x11,0x12,0x13,
+        0x14,0x15,0x16,0x17,
+        0x18,0x19,0x1a,0x1b,
+        0x1c,0x1d,0x1e,0x1f
+    };
+
+    // Definimos el nonce (12 bytes)
+    uint8_t nonce_bytes[12] = {
+        0x00,0x00,0x00,0x09,
+        0x00,0x00,0x00,0x4a,
+        0x00,0x00,0x00,0x00
+    };
+
+    // Reinterpretamos como palabras de 32 bits
+    uint32_t *key = (uint32_t*) key_bytes;
+    uint32_t *nonce = (uint32_t*) nonce_bytes;
+
+    uint32_t counter = 1;
+
+    // Llamamos a la función chacha20_block
+    chacha20_block(output, key, counter, nonce);
+    print_string("DEBUG:\n");
+    print_hex(output[0]);
+    print_char('\n');
+
+    print_string("Resultados de chacha20 block:\n");
+    
+    for(int i=0;i<16;i++){
+        print_number(i);
+        print_char(':');
+        print_hex(output[i]);
+        print_char('\n');
+    }
+
     return 0;
 }
