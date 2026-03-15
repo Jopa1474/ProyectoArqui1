@@ -80,7 +80,7 @@ int main() {
     // c = 0x4581472e
     // d = 0x5881c4bb
 
-    /*
+    
     
     print_string("Iniciando prueba de quarter round...\n");
 
@@ -121,7 +121,6 @@ int main() {
 
     print_char('\n');
     
-    */
 
     print_string("Iniciando prueba de chacha20 block. \n");
 

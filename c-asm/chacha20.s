@@ -129,11 +129,14 @@ chacha20_block:
     # Por convención, guardamos los registros que vamos a usar para 
     # almacenar la dirección del inicio de ambos arrays
 
-    addi sp, sp, -16 # Guardamos 16 bytes para ambos registros 
+    addi sp, sp, -32 # Guardamos espacio para ra + s0 + s1 + s2 
 
-    sw s0, 0(sp) # Registro para state
-    sw s1, 4(sp) # Registro para working_state
-    sw s2, 8(sp) # Registro para no perder el rastro de a0 (output)
+    sw ra, 0(sp) # Guardamos return address para no perder la referencia despues de llamar varias veces a quarter_round
+    sw s0, 4(sp) # Registro para state
+    sw s1, 8(sp) # Registro para working_state
+    sw s2, 12(sp) # Registro para no perder el rastro de a0 (output)
+    sw s3, 16(sp) # Registro para evitar problemas con el contador en inner_block
+    sw s4, 20(sp) # Registro para evitar problemas con el loop de inner_block
 
     # Reservamos el espacio para los arrays (64 + 64 bytes)
 
@@ -232,20 +235,22 @@ loop_working_state:
 
 loop_working_state_done:
     
-    li t0, 0 # Contador para el inner inner block, para las 10 rondas
-    li t1, 10
+    li s3, 0 # Contador para el inner inner block, para las 10 rondas
+    li s4, 10
 
     # Para no perder la referencia a output, lo guardamos en s2
     mv s2, a0 
+    # Ahora, como quarter_round usa state = a0, pasamos working_state a a0
+    mv a0, s1
 
 inner_block:
 
     # Si el contador llega a 10, saltamos
-    bge t0, t1, inner_block_done
+    bge s3, s4, inner_block_done
 
     # Operaciones de columna
     # quarter_round(state, 0, 4, 8, 12)
-    mv a0, s1
+    
     li a1, 0
     li a2, 4
     li a3, 8
@@ -254,7 +259,7 @@ inner_block:
     call quarter_round
 
     # quarter_round(state, 1, 5, 9, 13)
-    mv a0, s1
+    
     li a1, 1
     li a2, 5
     li a3, 9
@@ -263,7 +268,7 @@ inner_block:
     call quarter_round
     
     # quarter_round(state, 2, 6, 10, 14)
-    mv a0, s1
+    
     li a1, 2
     li a2, 6
     li a3, 10
@@ -272,7 +277,7 @@ inner_block:
     call quarter_round
 
     # quarter_round(state, 3, 7, 11, 15)
-    mv a0, s1
+    
     li a1, 3
     li a2, 7
     li a3, 11
@@ -282,7 +287,7 @@ inner_block:
 
     # Operaciones de diagonal
     # quarter_round(state, 0, 5, 10, 15)
-    mv a0, s1
+    
     li a1, 0
     li a2, 5
     li a3, 10
@@ -291,7 +296,7 @@ inner_block:
     call quarter_round
 
     # quarter_round(state, 1, 6, 11, 12)
-    mv a0, s1
+    
     li a1, 1
     li a2, 6
     li a3, 11
@@ -300,7 +305,7 @@ inner_block:
     call quarter_round
 
     # quarter_round(state, 2, 7, 8, 13)
-    mv a0, s1
+    
     li a1, 2
     li a2, 7
     li a3, 8
@@ -309,7 +314,7 @@ inner_block:
     call quarter_round
 
     # quarter_round(state, 3, 4, 9, 14)
-    mv a0, s1
+   
     li a1, 3
     li a2, 4
     li a3, 9
@@ -317,14 +322,16 @@ inner_block:
     
     call quarter_round
 
-    addi t0, t0, 1
+    addi s3, s3, 1
     j inner_block
 
 inner_block_done:
 
+    mv s1, a0 # Devolvemos working_state a s1
+
     # Ahora definimos el working_state final con:
     # working_state[i] = working_state[i] + state[i]
-
+    
     li t0, 0
     li t1, 16
 
@@ -387,15 +394,19 @@ loop_output:
     j loop_output
 
 loop_output_done:
+
     # Para terminar, restauramos el stack y asigmanos a0 = s2
 
     mv a0, s2
 
     addi sp, sp, 128
 
-    lw s0, 0(sp)
-    lw s1, 4(sp)
-    lw s2, 8(sp)
+    lw ra, 0(sp)
+    lw s0, 4(sp)
+    lw s1, 8(sp)
+    lw s2, 12(sp)
+    lw s3, 16(sp)
+    lw s4, 20(sp)
 
-    addi sp, sp, 16
+    addi sp, sp, 32
     ret
