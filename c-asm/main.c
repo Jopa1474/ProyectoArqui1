@@ -3,7 +3,7 @@
 
 
 extern void quarter_round(uint32_t *state, int a, int b, int c, int d);
-
+extern void chacha20_block(uint32_t *output, uint32_t *key, uint32_t counter, uint32_t *nonce);
 
 // Implementacion de las funciones de impresion para el sistema de salida (UART)
 void print_char(char c) {
