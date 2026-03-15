@@ -25,7 +25,7 @@ quarter_round:
     slli t0, a2, 2      # t0 = b * 4
     add  t0, a0, t0     # t0 = state + offset
 
-    # Guardamos en t2 lo de state[i]
+    # Guardamos en t2 lo de state[b]
     lw   t2, 0(t0)      # t2 = state[b]
 
     # Obtenemos la direccion de state[c]
@@ -81,9 +81,9 @@ quarter_round:
     add t3, t3, t4 # c = c + d
     xor t2, t2, t3 # b xor c
 
-    # b <<< 12
-    slli t5, t2, 12
-    srli t6, t2, 20 #(32-12 = 20)
+    # b <<< 7
+    slli t5, t2, 7
+    srli t6, t2, 25 #(32-7 = 25)
     or t2, t5, t6
 
     # Ahora hay que actualizar el state con los nuevos
