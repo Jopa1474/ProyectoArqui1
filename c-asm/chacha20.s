@@ -3,7 +3,7 @@
 
 .globl quarter_round
 .globl chacha20_block
-
+.globl chacha20_encrypt
 
 quarter_round:
 
@@ -149,7 +149,7 @@ chacha20_block:
 
     # Creamos el state uniendo constantes + key + counter + nonce
 
-    #Definimos las constantes y las agregamos (4 words)
+    # Definimos las constantes y las agregamos (4 words)
 
     li t0, 0x61707865
     sw t0, 0(s0)
@@ -410,3 +410,144 @@ loop_output_done:
 
     addi sp, sp, 32
     ret
+
+chacha20_encrypt:
+
+    # a0 = plaintext
+    # a1 = ciphertext
+    # a2 = length (del plaintext ingresado)
+    # a3 = keystream
+    # a4 = key
+    # a5 = counter
+    # a6 = nonce 
+
+    # Para chacha20_block se tenian los siguientes registros
+    # a0 = output
+    # a1 = key
+    # a2 = counter
+    # a3 = nonce
+    # Entonces, guardamos esos regsitros en registros s antes de continuar, evitando desde s0 hasta s4 porque estos los utilizaba el chacha20_block
+
+    addi sp, sp, -32 # Guardamos espacio
+
+    sw ra, 0(sp) # Guardamos return address para no perder la referencia despues de hacer varios llamados
+    sw s5, 4(sp) # Registro para plaintext [a0]
+    sw s6, 8(sp) # Registro para ciphertext [a1]
+    sw s7, 12(sp) # Registro para length [a2]
+    sw s8, 16(sp) # Registro para keystream [a3]
+    sw s9, 20(sp) # Registro para el contador de encrypt loop 
+    sw s10, 24(sp) # Registro para los bloques de 64
+    sw s11, 28(sp) # Registro para la direccion real
+
+    # Cambiamos de lugar por un momento los registros
+    mv s5, a0
+    mv s6, a1
+    mv s7, a2
+    mv s8, a3
+     
+    # Ahora agregamos key y nonce a los registros que usa chacha20_block
+
+    mv a0, a3 # keystream a output
+    mv a1, a4 # key
+    mv a2, a5 # counter
+    mv a3, a6 # nonce
+
+    # Como debemos mantener cual es la direccion real para plaintext y cipher text, la obtenemos de aca
+    li s11, 0
+
+# Va desde 0 hasta length con saltos de 64, pero si el largo queda entre medio (ej 100, que 100-64 serian 36bytes que sobran)
+# entonces en ese caso, en vez de tomar 64, tomamos lo que queda de length
+encrypt_loop_i:
+
+    li s9, 0
+    li s10, 64
+
+    call chacha20_block
+
+    # Si length es menor o igual a 64 (o 64 es mayor o igual a length)
+    bge s10, s7, encrypt_loop_intermedio
+
+    mv s8, a0 # Movemos el output a keystream
+
+    addi a2, a2, 1 # counter = counter + 1
+
+    addi s7, s7, -64 # Restamos los 64 que acabamos de usar al largo
+
+encrypt_loop_j:
+
+    # ciphertext[i] = block[i] ^ keystream[i]
+
+    bge s9, s10, encrypt_loop_i
+
+    slli t0, s11, 2 # Obtenemos el offset para las direcciones
+
+    add t1, s5, t0 # Obtenemos la direccion de plaintext[i] (block[i])
+    lw t2, 0(t1) # Obtenemos plaintext[i]
+
+    add t3, s8, t0 # Obtenemos la direccion de keystream[i]
+    lw t4, 0(t3) # Obtenemos keystream[i]
+
+    xor t2, t2, t4 # block[i] XOR keystream[i]
+
+    add t5, s6, t0 # Obtenemos la direccion de ciphertext[i]
+    sw t2, 0(t5) # Agregamos ciphertext[i] a su posicion
+
+    addi s9, s9, 1 # Actualizamos contador del loop
+    addi s11, s11, 1 # Actualizamos contador de direccion real
+
+    j encrypt_loop_j
+
+# Ahora, en caso de que quede intermedio o igual a 64, trabajamos con el largo restante(s7) en vez de con s9
+encrypt_loop_intermedio:
+
+    # ciphertext[i] = block[i] ^ keystream[i]
+
+    bge s9, s7, encrypt_loop_done
+
+    slli t0, s11, 2 # Obtenemos el offset para las direcciones
+
+    add t1, s5, t0 # Obtenemos la direccion de plaintext[i] (block[i])
+    lw t2, 0(t1) # Obtenemos plaintext[i]
+
+    add t3, s8, t0 # Obtenemos la direccion de keystream[i]
+    lw t4, 0(t3) # Obtenemos keystream[i]
+
+    xor t2, t2, t4 # block[i] XOR keystream[i]
+
+    add t5, s6, t0 # Obtenemos la direccion de ciphertext[i]
+    sw t2, 0(t5) # Guardamos ciphertext[i] en su posion
+
+    addi s9, s9, 1
+    addi s11, s11, 1
+
+    j encrypt_loop_intermedio
+
+encrypt_loop_done:
+
+    # Devolvemos todo a su estado inicial
+
+    mv a6, a3
+    mv a5, a2
+    mv a4, a1
+    mv a3, a0
+
+    mv a3, s8
+    mv a2, s7
+    mv a1, s6
+    mv a0, s5
+
+    # Restauramos los registros utilizados    
+
+    lw ra, 0(sp) # Guardamos return address para no perder la referencia despues de hacer varios llamados
+    lw s5, 4(sp) # Registro para plaintext [a0]
+    lw s6, 8(sp) # Registro para ciphertext [a1]
+    lw s7, 12(sp) # Registro para length [a2]
+    lw s8, 16(sp) # Registro para keystream [a3]
+    lw s9, 20(sp) # Registro para el contador de encrypt loop 
+    lw s10, 24(sp) # Registro para los bloques de 64
+    lw s11, 28(sp) # Registro para la direccion real
+
+    addi sp, sp, 32 # Restauramos el espacio usado
+
+    ret
+

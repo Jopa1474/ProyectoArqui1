@@ -1,9 +1,13 @@
 
 #include <stdint.h>
 
-
+// Declaración de funciones de ensamblador
 extern void quarter_round(uint32_t *state, int a, int b, int c, int d);
 extern void chacha20_block(uint32_t *output, uint32_t *key, uint32_t counter, uint32_t *nonce);
+
+// Declaración de la función de cifrado chacha20 (que utiliza chacha20_block internamente)
+// para plaintext y ciphertext, al ser chacha20 un cifrado de byte a byte, los asignamos asi
+extern void chacha20_encrypt(uint8_t *plaintext, uint8_t *ciphertext, uint32_t length, uint32_t *keystream, uint32_t *key, uint32_t counter, uint32_t *nonce);
 
 // Implementacion de las funciones de impresion para el sistema de salida (UART)
 void print_char(char c) {
@@ -81,7 +85,7 @@ int main() {
     // d = 0x5881c4bb
 
     
-    
+    /*
     print_string("Iniciando prueba de quarter round...\n");
 
     // state de prueba
@@ -120,7 +124,8 @@ int main() {
     print_string("Quarter round completado.");
 
     print_char('\n');
-    
+    */
+   /*
 
     print_string("Iniciando prueba de chacha20 block. \n");
 
@@ -155,9 +160,6 @@ int main() {
 
     // Llamamos a la función chacha20_block
     chacha20_block(output, key, counter, nonce);
-    print_string("DEBUG:\n");
-    print_hex(output[0]);
-    print_char('\n');
 
     print_string("Resultados de chacha20 block:\n");
     
@@ -167,6 +169,7 @@ int main() {
         print_hex(output[i]);
         print_char('\n');
     }
+    */
 
     return 0;
 }
