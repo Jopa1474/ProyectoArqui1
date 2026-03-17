@@ -1,4 +1,3 @@
-
 #include <stdint.h>
 
 // Declaración de funciones de ensamblador
@@ -8,6 +7,20 @@ extern void chacha20_block(uint32_t *output, uint32_t *key, uint32_t counter, ui
 // Declaración de la función de cifrado chacha20 (que utiliza chacha20_block internamente)
 // para plaintext y ciphertext, al ser chacha20 un cifrado de byte a byte, los asignamos asi
 extern void chacha20_encrypt(uint8_t *plaintext, uint8_t *ciphertext, uint32_t length, uint32_t *keystream, uint32_t *key, uint32_t counter, uint32_t *nonce);
+
+
+void *memcpy(void *dest, const void *src, unsigned int n)
+{
+    unsigned char *d = dest;
+    const unsigned char *s = src;
+
+    for(unsigned int i = 0; i < n; i++)
+    {
+        d[i] = s[i];
+    }
+
+    return dest;
+}
 
 // Implementacion de las funciones de impresion para el sistema de salida (UART)
 void print_char(char c) {
@@ -170,6 +183,53 @@ int main() {
         print_char('\n');
     }
     */
+
+    uint8_t plaintext[] = "Hola mundovichhhhhh, este es un mensaje de prueba para chacha20_encry";
+    uint8_t ciphertext[sizeof(plaintext)]; // El ciphertext tendrá el mismo tamaño que el plaintext
+
+    uint32_t length = sizeof(plaintext) - 1; // Excluir el null terminator
+
+    // Definimos el output (16 palabras = 64 bytes)
+    uint32_t keystream[16];
+
+    // Valores de prueba para key, counter y nonce
+
+    // Definimos el key (32 bytes)
+    uint8_t key_bytes[32] = {
+        0x00,0x01,0x02,0x03,
+        0x04,0x05,0x06,0x07,
+        0x08,0x09,0x0a,0x0b,
+        0x0c,0x0d,0x0e,0x0f,
+        0x10,0x11,0x12,0x13,
+        0x14,0x15,0x16,0x17,
+        0x18,0x19,0x1a,0x1b,
+        0x1c,0x1d,0x1e,0x1f
+    };
+
+    // Definimos el nonce (12 bytes)
+    uint8_t nonce_bytes[12] = {
+        0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x4a,
+        0x00,0x00,0x00,0x00
+    };
+
+    // Reinterpretamos como palabras de 32 bits
+    uint32_t *key = (uint32_t*) key_bytes;
+    uint32_t *nonce = (uint32_t*) nonce_bytes;
+
+    uint32_t counter = 1;
+
+    // Llamamos a la función de cifrado
+    chacha20_encrypt(plaintext, ciphertext, length, keystream, key, counter, nonce);
+
+    print_string("Ciphertext:\n");
+
+    for(int i=0;i<length;i++){
+        print_hex(ciphertext[i]);
+        print_char(' ');
+    }
+
+    print_char('\n');
 
     return 0;
 }
