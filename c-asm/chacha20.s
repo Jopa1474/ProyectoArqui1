@@ -428,7 +428,7 @@ chacha20_encrypt:
     # a3 = nonce
     # Entonces, guardamos esos regsitros en registros s antes de continuar, evitando desde s0 hasta s4 porque estos los utilizaba el chacha20_block
 
-    addi sp, sp, -32 # Guardamos espacio
+    addi sp, sp, -44 # Guardamos espacio para todos los registros
 
     sw ra, 0(sp) # Guardamos return address para no perder la referencia despues de hacer varios llamados
     sw s5, 4(sp) # Registro para plaintext [a0]
@@ -438,6 +438,7 @@ chacha20_encrypt:
     sw s9, 20(sp) # Registro para el contador de encrypt loop 
     sw s10, 24(sp) # Registro para los bloques de 64
     sw s11, 28(sp) # Registro para la direccion real
+    
 
     # Cambiamos de lugar por un momento los registros
     mv s5, a0
@@ -452,6 +453,12 @@ chacha20_encrypt:
     mv a2, a5 # counter
     mv a3, a6 # nonce
 
+    # Los guardamos en el stack, esto porque en chacha20_block se pierde la referencia a los registros
+    # entonces debemos guardarlos antes
+    sw a1, 32(sp) # Guardamos key (a4 original)
+    sw a2, 36(sp) # Guardamos el counter original
+    sw a3, 40(sp) # Guardamos nonce (a6 original)
+
     # Como debemos mantener cual es la direccion real para plaintext y cipher text, la obtenemos de aca
     li s11, 0
 
@@ -459,17 +466,22 @@ chacha20_encrypt:
 # entonces en ese caso, en vez de tomar 64, tomamos lo que queda de length
 encrypt_loop_i:
 
-    li s9, 0
-    li s10, 64
+    li s9, 0 # El contador desde 0
+    li s10, 64 # El limite del contador para encrypt_loop_j
 
+    # Para obtener los valores originales
+    lw a1, 32(sp) # key restaurada desde stack
+    lw a2, 36(sp) # counter restaurado desde stack
+    lw a3, 40(sp) # nonce restaurada desde stack
+    
     call chacha20_block
 
     # Si length es menor o igual a 64 (o 64 es mayor o igual a length)
     bge s10, s7, encrypt_loop_intermedio
 
-    mv s8, a0 # Movemos el output a keystream
-
+    lw a2, 36(sp) # Cargamos counter desde el stack
     addi a2, a2, 1 # counter = counter + 1
+    sw a2, 36(sp) # Guardamos counter en el stack nuevamente
 
     addi s7, s7, -64 # Restamos los 64 que acabamos de usar al largo
 
@@ -479,18 +491,19 @@ encrypt_loop_j:
 
     bge s9, s10, encrypt_loop_i
 
-    slli t0, s11, 2 # Obtenemos el offset para las direcciones
+    add t0, s5, s11 # Obtenemos la direccion de plaintext[i] (block[i])
+    lb t1, 0(t0) # Obtenemos plaintext[i]
 
-    add t1, s5, t0 # Obtenemos la direccion de plaintext[i] (block[i])
-    lw t2, 0(t1) # Obtenemos plaintext[i]
+    add t2, a0, s9 # Obtenemos la direccion de keystream[i]
+    lb t3, 0(t2) # Obtenemos keystream[i]
 
-    add t3, s8, t0 # Obtenemos la direccion de keystream[i]
-    lw t4, 0(t3) # Obtenemos keystream[i]
+    xor t1, t1, t3 # block[i] XOR keystream[i]
 
-    xor t2, t2, t4 # block[i] XOR keystream[i]
+    add t5, s8, s11 # Posicion para guardar el byte de keystream final
+    sb t3, 0(t5) # Subimos el byte de keystream que se esta utilizando a keystream final
 
-    add t5, s6, t0 # Obtenemos la direccion de ciphertext[i]
-    sw t2, 0(t5) # Agregamos ciphertext[i] a su posicion
+    add t4, s6, s11 # Obtenemos la direccion de ciphertext[i]
+    sb t1, 0(t4) # Agregamos ciphertext[i] a su posicion
 
     addi s9, s9, 1 # Actualizamos contador del loop
     addi s11, s11, 1 # Actualizamos contador de direccion real
@@ -500,25 +513,28 @@ encrypt_loop_j:
 # Ahora, en caso de que quede intermedio o igual a 64, trabajamos con el largo restante(s7) en vez de con s9
 encrypt_loop_intermedio:
 
+    bge zero, s7, encrypt_loop_done
+
     # ciphertext[i] = block[i] ^ keystream[i]
 
     bge s9, s7, encrypt_loop_done
 
-    slli t0, s11, 2 # Obtenemos el offset para las direcciones
+    add t0, s5, s11 # Obtenemos la direccion de plaintext[i] (block[i])
+    lb t1, 0(t0) # Obtenemos plaintext[i]
 
-    add t1, s5, t0 # Obtenemos la direccion de plaintext[i] (block[i])
-    lw t2, 0(t1) # Obtenemos plaintext[i]
+    add t2, a0, s9 # Obtenemos la direccion de keystream[i]
+    lb t3, 0(t2) # Obtenemos keystream[i]
 
-    add t3, s8, t0 # Obtenemos la direccion de keystream[i]
-    lw t4, 0(t3) # Obtenemos keystream[i]
+    xor t1, t1, t3 # block[i] XOR keystream[i]
 
-    xor t2, t2, t4 # block[i] XOR keystream[i]
+    add t5, s8, s11 # Posicion para guardar el byte de keystream final
+    sb t3, 0(t5) # Subimos el byte de keystream que se esta utilizando a keystream final
 
-    add t5, s6, t0 # Obtenemos la direccion de ciphertext[i]
-    sw t2, 0(t5) # Guardamos ciphertext[i] en su posion
+    add t4, s6, s11 # Obtenemos la direccion de ciphertext[i]
+    sb t1, 0(t4) # Agregamos ciphertext[i] a su posicion
 
-    addi s9, s9, 1
-    addi s11, s11, 1
+    addi s9, s9, 1 # Sumamos 1 al contador
+    addi s11, s11, 1 # Sumamos 1 a la direccion general
 
     j encrypt_loop_intermedio
 
@@ -547,7 +563,7 @@ encrypt_loop_done:
     lw s10, 24(sp) # Registro para los bloques de 64
     lw s11, 28(sp) # Registro para la direccion real
 
-    addi sp, sp, 32 # Restauramos el espacio usado
+    addi sp, sp, 44 # Restauramos el espacio usado
 
     ret
 

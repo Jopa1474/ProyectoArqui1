@@ -6,7 +6,7 @@ extern void chacha20_block(uint32_t *output, uint32_t *key, uint32_t counter, ui
 
 // Declaración de la función de cifrado chacha20 (que utiliza chacha20_block internamente)
 // para plaintext y ciphertext, al ser chacha20 un cifrado de byte a byte, los asignamos asi
-extern void chacha20_encrypt(uint8_t *plaintext, uint8_t *ciphertext, uint32_t length, uint32_t *keystream, uint32_t *key, uint32_t counter, uint32_t *nonce);
+extern void chacha20_encrypt(uint8_t *plaintext, uint8_t *ciphertext, uint32_t length, uint8_t *keystream, uint32_t *key, uint32_t counter, uint32_t *nonce);
 
 
 void *memcpy(void *dest, const void *src, unsigned int n)
@@ -184,13 +184,13 @@ int main() {
     }
     */
 
-    uint8_t plaintext[] = "Hola mundovichhhhhh, este es un mensaje de prueba para chacha20_encry";
+    uint8_t plaintext[] = "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it.";
     uint8_t ciphertext[sizeof(plaintext)]; // El ciphertext tendrá el mismo tamaño que el plaintext
 
     uint32_t length = sizeof(plaintext) - 1; // Excluir el null terminator
 
     // Definimos el output (16 palabras = 64 bytes)
-    uint32_t keystream[16];
+    uint8_t keystream[length];
 
     // Valores de prueba para key, counter y nonce
 
@@ -230,6 +230,14 @@ int main() {
     }
 
     print_char('\n');
+
+    print_string("Keystream:\n");
+
+    for(int i=0;i<length;i++){
+        
+        print_hex(keystream[i]);
+        print_char(' ');
+    }
 
     return 0;
 }
