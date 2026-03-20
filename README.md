@@ -13,17 +13,20 @@ El sistema nos permite cifrar y descifrar mensajes utilizando el mismo proceso, 
 ---
 
 ## Estructura del Proyecto
-
+```
+.
+├── c-asm/
+|   ├── main.c # Código principal en C (pruebas y ejecución)
+|   ├── chacha20.s # Implementación en ensamblador de Chacha20 
+|   ├── startup.s # Inicialización del entorno bare mental
+|   ├── build.sh # Script de compilación
+|   └── run.sh # Script de ejecución en QEMU
 ├── Documentación.md # Documentación técnica del proyecto
 ├── Dockerfile # Entorno con toolchain, QEMU y GDB
 ├── run.sh # Script para iniciar el contenedor
-├── README.md # Documentación del proyecto
-└── c-asm/
-    ├── main.c # Código principal en C (pruebas y ejecución)
-    ├── chacha20.s # Implementación en ensamblador de Chacha20 
-    ├── startup.s # Inicialización del entorno bare mental
-    ├── build.sh # Script de compilación
-    └── run.sh # Script de ejecución en QEMU
+└── README.md # Documentación del proyecto
+
+```
 
 ## Requisitos previos a la ejecución
 
@@ -261,10 +264,11 @@ info registers a0
 ...
 ```
 - Ver memoria:
-```
+```bash
 x/16xw $a0 # Para palabras
 x/64xb $a1 # Para bytes
-
+ ```
+ 
 - Eliminar breakpoints
 ```bash
 delete
