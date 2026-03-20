@@ -499,9 +499,6 @@ encrypt_loop_j:
 
     xor t1, t1, t3 # block[i] XOR keystream[i]
 
-    add t5, s8, s11 # Posicion para guardar el byte de keystream final
-    sb t3, 0(t5) # Subimos el byte de keystream que se esta utilizando a keystream final
-
     add t4, s6, s11 # Obtenemos la direccion de ciphertext[i]
     sb t1, 0(t4) # Agregamos ciphertext[i] a su posicion
 
@@ -527,9 +524,6 @@ encrypt_loop_intermedio:
 
     xor t1, t1, t3 # block[i] XOR keystream[i]
 
-    add t5, s8, s11 # Posicion para guardar el byte de keystream final
-    sb t3, 0(t5) # Subimos el byte de keystream que se esta utilizando a keystream final
-
     add t4, s6, s11 # Obtenemos la direccion de ciphertext[i]
     sb t1, 0(t4) # Agregamos ciphertext[i] a su posicion
 
@@ -539,6 +533,9 @@ encrypt_loop_intermedio:
     j encrypt_loop_intermedio
 
 encrypt_loop_done:
+
+    # Movemos el keystream del ultimo bloque a s8
+    mv s8, a0
 
     # Devolvemos todo a su estado inicial
 
