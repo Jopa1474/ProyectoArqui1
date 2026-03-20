@@ -184,7 +184,7 @@ int main() {
     }
     */
 
-    uint8_t plaintext[] = "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it.";
+    uint8_t plaintext[] = "Ladies and Gentlemen of the class of '99: If I could offer you only one tip for the future, sunscreen would be it.ANASHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE";
     uint8_t ciphertext[sizeof(plaintext)]; // El ciphertext tendrá el mismo tamaño que el plaintext
 
     uint32_t length = sizeof(plaintext) - 1; // Excluir el null terminator
@@ -238,6 +238,17 @@ int main() {
         print_hex(keystream[i]);
         print_char(' ');
     }
+
+    uint8_t decrypted[sizeof(plaintext)];
+
+    chacha20_encrypt(ciphertext, decrypted, length, keystream, key, counter, nonce);
+
+    print_string("Decrypted:\n");
+
+    for(int i = 0; i < length; i++){
+        print_char(decrypted[i]);
+    }
+    print_char('\n');
 
     return 0;
 }
