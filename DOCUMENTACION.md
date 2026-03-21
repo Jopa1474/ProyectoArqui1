@@ -136,7 +136,7 @@ Se realizaron pruebas utilizando GDB sobre QEMU para verificar el comportamiento
 
 ## `quarter_round`
 
-Para el quarter round, utilizamos los vectores de pruebas del RFC pero en un state previo, así confirmamos primero que cambie a el valor que es y que sea justo en la posición indicada en el quarter round (a,b,c y d), entonces, se obtuvieron los siguientes resultados en las posiciones 0, 4, 8 y 12, y los comparamos con los del RFC
+Para el `quarter_round`, utilizamos los vectores de pruebas del RFC pero en un state previo, así confirmamos primero que cambie a el valor que es y que sea justo en la posición indicada en el `quarter_round` (a,b,c y d), entonces, se obtuvieron los siguientes resultados en las posiciones 0, 4, 8 y 12, y los comparamos con los del RFC
 
 ![quarter round](imagenes/quarter_round.png)
 
@@ -172,7 +172,7 @@ Verificamos los resultados obtenidos con los vectores esperados del RFC
 
 
 ## `chacha20_encrypt`
-Para ver el funcionamiento interno, añadimos un break en encrypt_loop_j y encrypt_loop_intermedio para ver los keystreams generados para cada counter:
+Para ver el funcionamiento interno, añadimos un break en `encrypt_loop_j` y `encrypt_loop_intermedio` para ver los keystreams generados para cada counter:
 ```bash
 break encrypt_loop_j
 break encrypt_loop_intermedio
@@ -200,13 +200,13 @@ Después vemos el resultado del ciphertext y del keystream finales, junto con el
 
 # Bitácora de un bug
 
-Un bug que tuve en chacha20_encrypt fue que como para chacha20_block ocupaba utilizar los registros a1, a2 y a3 como registros de argumento los cuales pueden ser sobrescritos durante llamadas a funciones, por lo mismo, el contenido de ellos que estaba antes de ser llamado por chacha20_block, se perdía, ya que dentro de chacha20_block se llamaba a quarter_round, y este ocupaba estos registros para a, b y c, por lo que cambiaban, pero antes, el contenido de estos registros originalmente era el key, counter y el nonce, por lo que le entraba un resultado que no tenía nada que ver con lo que necesitaba. Básicamente este problema ocurrió debido a no preservar correctamente registros, por lo que al final resultaba en que el programa nunca se ejecutaba, entonces la solución fue guardar los registros en memoria con:
+Un bug que tuve en `chacha20_encrypt` fue que como para `chacha20_block` ocupaba utilizar los registros a1, a2 y a3 como registros de argumento los cuales pueden ser sobrescritos durante llamadas a funciones, por lo mismo, el contenido de ellos que estaba antes de ser llamado por `chacha20_block`, se perdía, ya que dentro de `chacha20_block` se llamaba a `quarter_round`, y este ocupaba estos registros para a, b y c, por lo que cambiaban, pero antes, el contenido de estos registros originalmente era el key, counter y el nonce, por lo que le entraba un resultado que no tenía nada que ver con lo que necesitaba. Básicamente este problema ocurrió debido a no preservar correctamente registros, por lo que al final resultaba en que el programa nunca se ejecutaba, entonces la solución fue guardar los registros en memoria con:
 ```
 sw a1, 32(sp) # Guardamos key (a4 original)
 sw a2, 36(sp) # Guardamos el counter original
 sw a3, 40(sp) # Guardamos nonce (a6 original)
 ```
-Y antes de llamar a chacha20_block los reconstruíamos:
+Y antes de llamar a `chacha20_block` los reconstruíamos:
 
 ```
 lw a1, 32(sp) # key restaurada desde stack

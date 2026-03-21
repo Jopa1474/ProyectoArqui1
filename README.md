@@ -88,7 +88,7 @@ Una vez conectados a QEMU, escribimos el comando:
 ```bash
 continue
 ```
-Esto para ejecutar las pruebas implementadas en el documento main.c, más adelante se muestran ejemplos de comandos para depuración desde GBD.
+Esto para ejecutar las pruebas implementadas en el documento main.c, más adelante se muestran ejemplos de comandos para depuración desde GDB.
 Ahora, para validar la implementación se utilizaron los vectores de prueba oficiales del RFC.
 
 ### 1. Prueba de `quarter_round`
@@ -99,13 +99,13 @@ Se utilizaron los valores de prueba para a, b, c, d del RFC
 - c = 0x9b8d6f43
 - d = 0x01234567
 
-Resultados esperados después de la ejecución de quarter_round:
+Resultados esperados después de la ejecución de `quarter_round`:
 - a = 0xea2a92f4
 - b = 0xcb1cf8ce
 - c = 0x4581472e
 - d = 0x5881c4bb
 
-Como quarter_round cambia justo en posiciones especificas del state o keystream, entonces utilizamos esos valores de prueba de a, b, c y d en el mismo, y así confirmamos que cambien de manera correcta y que haya sido en la posición correcta.
+Como `quarter_round` cambia justo en posiciones especificas del state o keystream, entonces utilizamos esos valores de prueba de a, b, c y d en el mismo, y así confirmamos que cambien de manera correcta y que haya sido en la posición correcta.
 
 - **State (16 words)**
 ```
@@ -131,7 +131,7 @@ state[14] = 0x4a000000
 state[15] = 0x00000000
 ```
 
-Utilizando quarter_round(state, 0,4,8,12)
+Utilizando `quarter_round(state, 0,4,8,12)`
 Verificamos que cambiaron las posiciones 0, 4, 8 y 12 por los valores correctos
 
 ---
@@ -202,8 +202,9 @@ f9 1b 65 c5 52 47 33 ab 8f 59 3d ab cd 62 b3 57
 Se verificó que:
 
 - El ciphertext se genera correctamente mediante:
+```
 ciphertext[i] = plaintext[i] ^ keystream[i]
-
+```
 
 - El keystream corresponde al generado por `chacha20_block` (último bloque en esta implementación)
 
@@ -212,8 +213,9 @@ ciphertext[i] = plaintext[i] ^ keystream[i]
 ### 5. Prueba de descifrado
 
 Se validó la propiedad reversible del algoritmo:
+```
 plaintext = ciphertext ^ keystream
-
+```
 
 Aplicando nuevamente la función `chacha20_encrypt` sobre el ciphertext, se recupera el plaintext original.
 
@@ -242,7 +244,7 @@ disassemble chacha20_encrypt
 disassemble chacha20_block
 ...
 ```
-Nota: Puede ser cualquier otra etiqueta del codigo, no solo chacha20_encrypt o chacha20_block
+Nota: Puede ser cualquier otra etiqueta del codigo, no solo `chacha20_encrypt` o `chacha20_block`
 
 Ahora, viendo las direcciones, para colocar el break point hacemos lo siguiente:
 ```bash
