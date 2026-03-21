@@ -15,6 +15,6 @@ qemu-system-riscv32 \
     -machine virt \
     -nographic \
     -bios none \
-    -kernel hola.elf \
+    -kernel main.elf \
     -S \
     -gdb tcp::1234
